@@ -1,0 +1,20 @@
+[DEFAULT]
+banaction = ufw
+
+[nginx-unauthorized]
+enabled  = true
+port     = http,https
+filter   = nginx-unauthorized-filter
+logpath  = {{ nginx_log_dir }}/access.log
+maxretry = 10
+findtime = 60
+bantime  = 3600
+
+[nginx-rejected]
+enabled  = true
+port     = http,https
+filter   = nginx-rejected-filter
+logpath  = {{ nginx_log_dir }}/access.log
+maxretry = 50
+findtime = 60
+bantime  = 3600

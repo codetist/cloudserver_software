@@ -1,0 +1,70 @@
+---
+- name: "Init parameters: {{ compose_name }}"
+  ansible.builtin.set_fact:
+    container_root_dir: "{{ containers_root }}/{{ compose_name }}"
+
+- name: "Init parameters: {{ compose_name }}"
+  ansible.builtin.set_fact:
+    container_volumes_dir: "{{ container_root_dir }}/{{ volumes_root_dir }}"
+
+- name: "Create container root dir: {{ compose_name }}"
+  ansible.builtin.file:
+    path: "{{ container_root_dir }}"
+    state: directory
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+  become: yes
+
+- name: "Create container volumes root dir: {{ compose_name }}"
+  ansible.builtin.file:
+    path: "{{ container_volumes_dir }}"
+    state: directory
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+  become: yes
+
+- name: "Setup compose: {{ compose_name }}"
+  ansible.builtin.include_tasks:
+    file: task_create_volume_dirs.yml
+  loop: "{{ compose_volumes | list }}"
+  loop_control:
+    loop_var: compose_volume_dir
+
+- name: "Setup compose configs: {{ compose_name }}"
+  ansible.builtin.include_tasks:
+    file: task_create_config.yml
+  loop: "{{ compose_config_templates | list }}"
+  loop_control:
+    loop_var: compose_config_template
+
+- name: "Copy compose file: {{ compose_name }}"
+  template:
+    src: "compose/{{ compose_template }}"
+    dest: "{{ container_root_dir }}/compose.yml"
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+  become: yes
+
+# Stop and restart compose in case it uses external config
+# files (mounted through volumes). Podman can detect on
+# podman compose up if the compose has changed, but not
+# if config files have changed. To be sure changes are
+# applied, stop relevant composes explicitly.
+- name: "Stop compose: {{ compose_name }}"
+  command: "podman compose down"
+  args:
+    chdir: "{{ container_root_dir }}"
+  become: yes
+  become_user: "{{ podman_user }}"
+  when: (compose_config_templates | list) | length > 0
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid.stdout }}"
+
+- name: "Start compose: {{ compose_name }}"
+  command: "podman compose up -d"
+  args:
+    chdir: "{{ container_root_dir }}"
+  become: yes
+  become_user: "{{ podman_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid.stdout }}"

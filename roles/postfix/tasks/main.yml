@@ -1,0 +1,91 @@
+---
+- name: postfix, Install
+  apt:
+    name:
+      - postfix
+      - libsasl2-modules
+      - mailutils
+      - ca-certificates
+    state: present
+  become: yes
+
+#
+# Rewrite mails send to {{ servername }} to {{ postfix_mail_address }}, so they get actually
+# send by/to external email address. Also used for sender verification.
+#
+# On Hetzner a mailbox or forwarder for {{ postfix_mail_address }} is required to
+# exist. Otherwise, Hetzner will not allow to send mails from an unknown mailadress.
+- name: postfix, copy generic
+  template:
+    src: templates/generic
+    dest: /etc/postfix/generic
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  become: yes
+  notify:
+    - Restart postfix
+
+- name: postfix, copy main.cf
+  template:
+    src: templates/main.cf
+    dest: /etc/postfix/main.cf
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  become: yes
+  notify:
+    - Restart postfix
+
+- name: postfix, copy sasl_passwd
+  template:
+    src: templates/sasl_passwd
+    dest: /etc/postfix/sasl_passwd
+    owner: root
+    group: root
+    mode: u=rw,g=,o=
+  become: yes
+  notify:
+    - Restart postfix
+
+- name: postfix, copy conf
+  template:
+    src: templates/recipient_canonical
+    dest: /etc/postfix/recipient_canonical
+    owner: root
+    group: root
+    mode: u=rw,g=,o=
+  become: yes
+  notify:
+    - Restart postfix
+
+- name: postfix, recipient_canonical db
+  shell: postmap /etc/postfix/recipient_canonical
+  args:
+    chdir: /etc/postfix
+  become: yes
+  notify:
+    - Restart postfix
+
+- name: postfix, sasl_passwd db
+  shell: postmap /etc/postfix/sasl_passwd
+  args:
+    chdir: /etc/postfix
+  become: yes
+  notify:
+    - Restart postfix
+
+#
+# Hostname in generic needs to match the real hostname
+# otherwise no mail is sent (and no error thrown)
+#
+- name: postfix, generic db
+  shell: postmap /etc/postfix/generic
+  args:
+    chdir: /etc/postfix
+  become: yes
+  notify:
+    - Restart postfix
+
+- name: Send config verification test mail
+  shell: 'echo "Mail send by Ansible postfix setup task to verify working configuration." | mail -s "Ansible Postfix configuration success" {{ postfix_mail_address }}'

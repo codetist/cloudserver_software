@@ -1,0 +1,17 @@
+backup_dir: /opt/backup
+backup_snapshots_dir: "{{ backup_dir }}/snapshots"
+backup_sync_dir: "{{ backup_dir }}/syncs"
+backup_snapshots_history_dir: "{{ backup_snapshots_dir }}/history"
+backup_logs_dir: "{{ backup_dir }}/logs"
+backup_mail_recipient: "{{ global_mail_recipient }}"
+
+# Backup configuration
+files_and_dirs_to_sync:
+  - "/var/lib/GeoIP"
+files_and_dirs_to_snapshot: []
+composes_to_sync:
+  - "kanboard"
+  - "miniflux"
+  - "readeck"
+composes_to_snapshot:
+  - "authelia"

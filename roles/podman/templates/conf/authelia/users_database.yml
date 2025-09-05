@@ -1,0 +1,11 @@
+users:
+  {{ authelia_user }}:
+    password: {{ authelia_user_password }}
+    displayname: '{{ authelia_user_display_name }}'
+    email: {{ authelia_user_email }}
+    disabled: false
+    zoneinfo: 'Europe/Berlin'
+    locale: 'de-DE'
+    groups:
+      - admins
+      - users

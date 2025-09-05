@@ -1,0 +1,20 @@
+#
+# Plain failes and/or directories to sync
+#
+# !!!!! .* files and dirs WILL NOT BE synced !!!!!
+# As they might easily get lost in later operations.
+# Put hidden files to snapshot_list, then they get
+# safely placed into an archive.
+#
+{% for file_or_dir in files_and_dirs_to_sync %}
+{{ file_or_dir }}
+{% endfor %}
+#
+# Podman Composes
+# Just add compose name here, as defined in podman
+# role. Compose will be shutdown before archiving
+# its directory, to make sure files are consistent.
+#
+{% for compose in composes_to_sync %}
+{{ containers_root }}/{{ compose }}
+{% endfor %}

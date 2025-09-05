@@ -1,0 +1,75 @@
+version: '3'
+
+services:
+  miniflux:
+    image: miniflux/miniflux:latest
+    restart: always
+    ports:
+      - "127.0.0.1:8280:8080"
+      - "{{ ansible_host }}:8280:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # https://miniflux.app/docs/configuration.html
+      - DATABASE_URL=postgres://miniflux:secret@db/miniflux?sslmode=disable
+      - RUN_MIGRATIONS=1
+      - BASE_URL=https://{{ feeds_subdomain }}.{{ hetzner_dns_zone }}/
+      # Number of days after which marking read items as removed. Use -1 to disable this feature
+      - CLEANUP_ARCHIVE_READ_DAYS=14
+      # Number of days after marking unread items as removed. Use -1 to disable this feature.
+      - CLEANUP_ARCHIVE_UNREAD_DAYS=30
+      # Cleanup job frequency to remove old sessions and archive entries.
+      - CLEANUP_FREQUENCY_HOURS=24
+      # Scheduler used for polling feeds
+      - POLLING_SCHEDULER=round_robin
+      # The interval in minutes that miniflux adds qualified feeds to the work queue.
+      - POLLING_FREQUENCY=60
+      # Minimum interval in minutes for the round-robin scheduler.
+      # Effectively, that is the interval in which feeds get updated with round_robin scheduler
+      # (if number of feeds <= BATCH_SIZE)
+      - SCHEDULER_ROUND_ROBIN_MIN_INTERVAL=240
+      # The maximum number of feeds to send to the work queue for each polling interval.
+      # The actual number of feeds added to the work queue is subject to the scheduler.
+      - BATCH_SIZE=1000
+      - METRICS_COLLECTOR=true
+      # List of networks allowed to access the /metrics endpoint (comma-separated values)
+      # localhost (default) 127.0.0.1/8, all 0.0.0.0/0
+      # all 10. networks: 10.0.0.0/8 (we are running in containers)
+      - METRICS_ALLOWED_NETWORKS=10.0.0.0/8
+      # Limits the number of concurrent requests to the same hostname when polling feeds.
+      - POLLING_LIMIT_PER_HOST=1
+      # Authelia config
+      # In case Miniflux returns Access forbidden after successful Authelia auth:
+      # Go to user settings, below username password will be a button:
+      # link account to Authelia. After this is done once, it will work.
+      - OAUTH2_OIDC_DISCOVERY_ENDPOINT=https://{{ auth_subdomain }}.{{ hetzner_dns_zone }}
+      - OAUTH2_CLIENT_ID=miniflux
+      - OAUTH2_CLIENT_SECRET={{ authelia_miniflux_client_secret }}
+      - OAUTH2_OIDC_PROVIDER_NAME=Authelia
+      - OAUTH2_PROVIDER=oidc
+      - OAUTH2_REDIRECT_URL=https://{{ feeds_subdomain }}.{{ hetzner_dns_zone }}/oauth2/oidc/callback
+      - OAUTH2_USER_CREATION=1
+      # Since we have OAuth now, disable password auth
+      - DISABLE_LOCAL_AUTH=true
+      # Timezone
+      - TZ=Europe/Berlin
+  db:
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=miniflux
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=miniflux
+      - TZ=Europe/Berlin
+    volumes:
+      - miniflux-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "miniflux"]
+      interval: 30s
+volumes:
+  miniflux-db:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[0] }}
+      o: bind

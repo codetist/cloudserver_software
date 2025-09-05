@@ -1,0 +1,118 @@
+---
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - nginx-extras
+      - haveged
+      - geoipupdate
+    state: present
+  become: yes
+
+- name: Copy GeoIpLite config
+  template:
+    src: templates/geoiplite2.conf
+    dest: /etc/GeoIP.conf
+    owner: root
+    mode: u=rw,g=r,o=r
+  become: yes
+
+- name: Get GeoIpLite2 databases
+  command:
+    cmd: "/usr/bin/geoipupdate -v"
+    creates: /var/lib/GeoIP/GeoLite2-Country.mmdb
+  become: yes
+
+- name: Create renewal directory
+  ansible.builtin.file:
+    path: "{{ geoip_dir }}"
+    state: directory
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: Create renewal script
+  ansible.builtin.template:
+    src: scripts/renewGeoIPdatabase.sh
+    dest: "{{ geoip_dir }}/renewGeoIPdatabase.sh"
+    mode: u=rwx,g=rw,o=r
+  become: yes
+
+- name: Create cron for GeoIpLite2 update
+  ansible.builtin.cron:
+    name: "geoiplite2update"
+    minute: 15
+    hour: 04
+    weekday: 0
+    job: "{{ geoip_dir }}/renewGeoIPdatabase.sh  >/dev/null 2>&1"
+  become: yes
+
+- name: Create Diffie Hellmann parameters for secure key exchange (might take 5-10 minutes)
+  ansible.builtin.command:
+    cmd: openssl dhparam -out /etc/ssl/dhparam.pem 4096
+    creates: /etc/ssl/dhparam.pem
+  become: yes
+
+- name: "Remove default vhost"
+  ansible.builtin.file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+  become: yes
+  notify:
+    - Restart nginx
+
+- name: Create nginx authelia auth snippet
+  ansible.builtin.template:
+    src: authelia_auth.conf
+    dest: /etc/nginx/snippets/authelia_auth.conf
+    owner: root
+    group: root
+    mode: u=rw
+  become: yes
+  notify:
+    - Restart nginx
+
+- name: Create nginx authelia internal snippet
+  ansible.builtin.template:
+    src: authelia_internal.conf
+    dest: /etc/nginx/snippets/authelia_internal.conf
+    owner: root
+    group: root
+    mode: u=rw
+  become: yes
+  notify:
+    - Restart nginx
+
+- name: Create nginx config
+  ansible.builtin.template:
+    src: nginx.conf
+    dest: /etc/nginx/nginx.conf
+    owner: root
+    group: root
+    mode: u=rw
+    validate: nginx -t -c %s
+  become: yes
+  notify:
+    - Restart nginx
+
+- name: "Create nginx vhosts"
+  template:
+    src: "{{ item }}"
+    dest: "/etc/nginx/sites-available/{{ item | basename }}"
+    owner: root
+    mode: u=rw
+  become: yes
+  with_fileglob:
+    - templates/vhosts/*
+  notify:
+    - Restart nginx
+
+- name: "Enable nginx vhosts"
+  file:
+    src: "/etc/nginx/sites-available/{{ item | basename}}"
+    dest: "/etc/nginx/sites-enabled/{{ item | basename}}"
+    state: link
+  become: yes
+  with_fileglob:
+    - templates/vhosts/*
+  notify:
+    - Restart nginx

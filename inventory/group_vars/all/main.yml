@@ -1,0 +1,33 @@
+# SSH/sudo credentials
+deploy_user: "{{ deploy_user_vault }}"
+deploy_user_password: "{{ deploy_user_password_vault }}"
+
+# User for running podman containers
+podman_user: runpodman
+
+# Email address to be registered with certbot
+letsencrypt_email: "{{ letsencrypt_email_vault }}"
+
+# Credentials for MaxMind GeoIpLite2
+maxmind_geoiplite2_account: "{{ maxmind_geoiplite2_account_vault }}"
+maxmind_geoiplite2_license_key: "{{ maxmind_geoiplite2_license_key_vault }}"
+
+# Default TTL for Hetzner DNS records (subdomains)
+dns_default_ttl: 7200
+
+# Containers root dir (used for podman and simplebackup roles)
+containers_root: /opt/containers
+
+# Nginx log dir
+nginx_log_dir: /var/log/nginx
+
+# Email address for server mails
+global_mail_recipient: "{{ global_mail_recipient_vault }}"
+
+# Postfix (as relay to send mails)
+postfix_mail_address: "{{ postfix_mail_address_vault }}"
+postfix_mail_domain: "{{ postfix_mail_domain_vault }}"
+postfix_mailserver: "{{ postfix_mailserver_vault }}"
+postfix_mailserver_port: "{{ postfix_mailserver_port_vault }}"
+postfix_mailserver_user: "{{ postfix_mailserver_user_vault }}"
+postfix_mailserver_password: "{{ postfix_mailserver_password_vault }}"

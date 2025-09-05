@@ -1,0 +1,38 @@
+services:
+  app:
+    image: codeberg.org/readeck/readeck:latest
+    restart: always
+    ports:
+      - "127.0.0.1:9097:8000"
+    environment:
+      # Defines the application log level. Can be error, warn, info, debug.
+      - READECK_LOG_LEVEL=error
+      # The IP address on which Readeck listens.
+      - READECK_SERVER_HOST=0.0.0.0
+      # The TCP port on which Readeck listens. Update container port above to match (right of colon).
+      - READECK_SERVER_PORT=8000
+      # Sets the trusted IP addresses that can set X-Forwarded headers.
+      - READECK_TRUSTED_PROXIES=["127.0.0.0/8", "10.0.0.0/8", "172.16.0.0/12"]
+      - READECK_SECRET_KEY={{ readeck_secret_key }}
+      - READECK_DATA_DIRECTORY=/readeck
+      # SMTP
+      - READECK_MAIL_HOST=host.containers.internal
+      - READECK_MAIL_PORT=25
+      - READECK_MAIL_INSECURE=true
+      - READECK_MAIL_FROM={{ postfix_mail_address }}
+      - READECK_MAIL_FROMNOREPLY={{ postfix_mail_address }}
+      # Timezone
+      - TZ=Europe/Berlin
+    volumes:
+      - readeck-data:/readeck
+    healthcheck:
+      test: ["CMD", "/bin/readeck", "healthcheck", "-config", "config.toml"]
+      interval: 30s
+      timeout: 2s
+      retries: 3
+volumes:
+  readeck-data:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[0] }}
+      o: bind

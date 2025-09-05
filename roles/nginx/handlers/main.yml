@@ -1,0 +1,16 @@
+- name: Restart nginx
+  ansible.builtin.service:
+    name: nginx
+    state: restarted
+    enabled: yes
+  become: yes
+#
+# Nginx creates log files with differenz users and rights, depending on
+# where it is defined. Changing to nginx.conf-style globally
+- name: Chown logfiles
+  ansible.builtin.shell: "{{ item }}"
+  with_items:
+    - "chown www-data:adm {{ nginx_log_dir }}/*.log"
+    - "chmod u=rw,go=,o= {{ nginx_log_dir }}/*.log"
+  listen: Restart nginx
+  become: yes

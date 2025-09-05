@@ -1,0 +1,39 @@
+---
+#
+# Check status:
+# sudo fail2ban-client status miniflux-filter
+# sudo fail2ban-client status miniflux-filter
+#
+# Unban ip:
+# sudo fail2ban-client set JAILNAME unbanip IP
+#
+- name: Install fail2ban
+  apt:
+    name:
+      - fail2ban
+    state: present
+  become: yes
+
+- name: Copy filters
+  template:
+    src: "{{ item }}"
+    dest: "/etc/fail2ban/filter.d/{{ item | basename }}"
+    owner: root
+    group: root
+    mode: u=rw,g=r
+  with_fileglob:
+    - templates/filters/*
+  become: yes
+  notify:
+    - Restart fail2ban
+
+- name: Copy jail
+  template:
+    src: templates/jail.local
+    dest: /etc/fail2ban/jail.d/defaults-debian.conf
+    owner: root
+    group: root
+    mode: u=rw,g=r
+  become: yes
+  notify:
+    - Restart fail2ban

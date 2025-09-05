@@ -1,0 +1,1 @@
+@{{ host_name }} {{ global_mail_recipient }}

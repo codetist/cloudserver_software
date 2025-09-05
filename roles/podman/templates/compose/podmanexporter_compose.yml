@@ -1,0 +1,23 @@
+version: '3'
+
+services:
+  podman-exporter:
+    # https://github.com/containers/prometheus-podman-exporter
+    image: quay.io/navidys/prometheus-podman-exporter:latest
+    # Enhanced metrics add image and container name to all container metrics
+    command: [ "prometheus-podman-exporter", "--collector.enhance-metrics" ]
+    restart: always
+    ports:
+      - "{{ ansible_host }}:9094:9882"
+    # User is needed, otherwise podman compose won't connect to the socket
+    # Both variables are empty currently, but it works. It stops working if
+    # correct UID:GID are added....
+    # Don't know why, but user: ":" effectively just works.
+    user: "${UID}:${GID}"
+    environment:
+      - CONTAINER_HOST=unix:///run/podman/podman.sock
+      - TZ=Europe/Berlin
+    volumes:
+      - ${XDG_RUNTIME_DIR}/podman/podman.sock:/run/podman/podman.sock:ro
+    security_opt:
+      - label=disable

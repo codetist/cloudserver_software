@@ -1,0 +1,203 @@
+server:
+  address: 'tcp://:9091'
+  endpoints:
+    authz:
+      auth-request:
+        implementation: 'AuthRequest'
+
+log:
+  level: 'info'
+
+access_control:
+  default_policy: 'deny'
+  rules:
+    - domain: '*.{{ hetzner_dns_zone }}'
+      policy: 'two_factor'
+      subject:
+        - ['group:users']
+
+authentication_backend:
+  refresh_interval: '1m'
+  password_reset:
+    disable: true
+  password_change:
+    disable: false
+  file:
+    watch: true
+    path: '/config/users_database.yml'
+    search:
+      email: true
+      case_insensitive: false
+    password:
+      algorithm: 'argon2'
+      argon2:
+        variant: 'argon2id'
+        iterations: 3
+        memory: 65536
+        parallelism: 4
+        key_length: 32
+        salt_length: 16
+      scrypt:
+        variant: 'scrypt'
+        iterations: 16
+        block_size: 8
+        parallelism: 1
+        key_length: 32
+        salt_length: 16
+      pbkdf2:
+        variant: 'sha512'
+        iterations: 310000
+        salt_length: 16
+      sha2crypt:
+        variant: 'sha512'
+        iterations: 50000
+        salt_length: 16
+      bcrypt:
+        variant: 'standard'
+        cost: 12
+
+identity_providers:
+  oidc:
+    jwks:
+      - key_id: 'example'
+        algorithm: 'RS256'
+        use: 'sig'
+        key: |
+{% for line in authelia_jwt_private_key.splitlines() %}
+          {{ line }}
+{% endfor %}
+    clients:
+      - client_id: 'memos'
+        client_name: 'memos'
+        client_secret: '{{ authelia_memos_client_secret_hashed }}'
+        public: false
+        authorization_policy: 'two_factor'
+        require_pkce: false
+        pkce_challenge_method: ''
+        redirect_uris:
+          - 'https://{{ memos_subdomain }}.{{ hetzner_dns_zone }}/auth/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        access_token_signed_response_alg: 'none'
+        userinfo_signed_response_alg: 'none'
+        token_endpoint_auth_method: 'client_secret_post'
+        # implicit = don't ask for consent when accessing applications
+        consent_mode: implicit
+        pre_configured_consent_duration: '3M'
+      - client_id: 'miniflux'
+        client_name: 'miniflux'
+        client_secret: '{{ authelia_minuflux_client_secret_hashed }}'
+        public: false
+        authorization_policy: 'two_factor'
+        require_pkce: false
+        pkce_challenge_method: ''
+        redirect_uris:
+          - 'https://{{ feeds_subdomain }}.{{ hetzner_dns_zone }}/oauth2/oidc/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'email'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        access_token_signed_response_alg: 'none'
+        userinfo_signed_response_alg: 'none'
+        token_endpoint_auth_method: 'client_secret_basic'
+        # implicit = don't ask for consent when accessing applications
+        consent_mode: implicit
+        pre_configured_consent_duration: '3M'
+
+identity_validation:
+  reset_password:
+    jwt_secret: '{{ authelia_jwt_secret }}'
+
+notifier:
+  disable_startup_check: false
+  smtp:
+    address: 'smtp://host.containers.internal:25'
+    timeout: '5s'
+    sender: "Authelia <{{ postfix_mail_address }}>"
+    identifier: 'localhost'
+    subject: "[Authelia] {title}"
+    startup_check_address: '{{ postfix_mail_address }}'
+    disable_require_tls: true
+    disable_html_emails: true
+
+ntp:
+  address: 'udp://2.de.pool.ntp.org:123'
+  version: 3
+  max_desync: '3s'
+  disable_startup_check: false
+  disable_failure: false
+
+password_policy:
+  standard:
+    enabled: true
+    min_length: 8
+    max_length: 0
+    require_uppercase: true
+    require_lowercase: true
+    require_number: true
+    require_special: true
+  zxcvbn:
+    enabled: false
+    min_score: 3
+
+regulation:
+  modes:
+    - 'user'
+    - 'ip'
+  max_retries: 5
+  find_time: '2m'
+  ban_time: '15m'
+
+session:
+  secret: '{{ authelia_session_secret }}'
+  inactivity: '1h'
+  expiration: '24h'
+  remember_me: '1M'
+  cookies:
+    - name: 'authelia_session'
+      domain: '{{ hetzner_dns_zone }}'
+      authelia_url: 'https://{{ auth_subdomain }}.{{ hetzner_dns_zone }}'
+      default_redirection_url: 'https://{{ hetzner_dns_zone }}'
+
+storage:
+  encryption_key: '{{ authelia_storage_encryption_key }}'
+  local:
+    path: '/config/db.sqlite3'
+
+telemetry:
+  metrics:
+    enabled: true
+    address: 'tcp://:9092/metrics'
+    buffers:
+      read: 4096
+      write: 4096
+    timeouts:
+      read: '6s'
+      write: '6s'
+      idle: '30s'
+
+totp:
+  disable: false
+  issuer: '{{ hetzner_dns_zone }}'
+  algorithm: 'sha1'
+  digits: 6
+  period: 30
+  skew: 1
+  secret_size: 32
+  allowed_algorithms:
+    - 'SHA1'
+  allowed_digits:
+    - 6
+  allowed_periods:
+    - 30
+  disable_reuse_security_policy: false

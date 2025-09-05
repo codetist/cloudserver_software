@@ -1,0 +1,21 @@
+- name: Restart fail2ban
+  ansible.builtin.service:
+    name: fail2ban
+    state: restarted
+    enabled: yes
+  become: yes
+
+- name: verify fail2ban is running
+  ansible.builtin.systemd:
+    name: fail2ban
+    state: started
+  register: fail2ban_status
+  listen: Restart fail2ban
+  become: yes
+
+- name: fail if fail2ban is not running
+  ansible.builtin.fail:
+    msg: "Fail2ban service failed to start!"
+  when: fail2ban_status.status.ActiveState != "active"
+  listen: Restart fail2ban
+  become: yes

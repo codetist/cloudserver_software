@@ -1,0 +1,15 @@
+---
+- name: Check if file exists
+  ansible.builtin.stat:
+    path: "{{ container_volumes_dir }}/{{ compose_config_template.target }}"
+  register: conf_file_state
+  become: yes
+
+- name: "Copy compose config file: {{ compose_config_template.target }}"
+  template:
+    src: "{{ compose_config_template.source }}"
+    dest: "{{ container_volumes_dir }}/{{ compose_config_template.target }}"
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+  when: compose_config_template.do_update | bool or not conf_file_state.stat.exists
+  become: yes

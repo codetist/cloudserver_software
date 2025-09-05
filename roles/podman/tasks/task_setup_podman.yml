@@ -1,0 +1,67 @@
+---
+- name: Create podman user
+  ansible.builtin.user:
+    name: "{{ podman_user }}"
+    state: present
+    password_lock: true
+    shell: /usr/sbin/nologin
+    comment: "Podman user to run containers"
+  become: yes
+
+- name: Get UID of podman user
+  command: "id -u {{ podman_user }}"
+  register: podman_user_uid
+  changed_when: false
+  become: yes
+
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - podman
+      - podman-docker
+    state: present
+  become: yes
+
+- name: Create containers root dir
+  ansible.builtin.file:
+    path: "{{ containers_root }}"
+    state: directory
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+  become: yes
+
+- name: Create user-local containers.conf
+  template:
+    src: templates/conf/podman/containers.conf
+    dest: ~/.config/containers/containers.conf
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+    mode: u=rw,g=rw,o=r
+  become: yes
+  become_user: "{{ podman_user }}"
+
+- name: Enable lingering
+  ansible.builtin.command: "loginctl enable-linger {{ podman_user }}"
+  become: yes
+
+- name: Enable podman restart service
+  ansible.builtin.command: systemctl --user enable --now podman-restart.service
+  become: yes
+  become_user: "{{ podman_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid.stdout }}"
+
+- name: Enable and start podman user socket (rootless)
+  ansible.builtin.command: systemctl --user enable podman.socket
+  become: yes
+  become_user: "{{ podman_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid.stdout }}"
+
+- name: Enable and start podman user socket (rootless)
+  ansible.builtin.command: systemctl --user start podman.socket
+  become: yes
+  become_user: "{{ podman_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid.stdout }}"
+

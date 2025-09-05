@@ -1,0 +1,80 @@
+---
+- name: "Create backup dir"
+  ansible.builtin.file:
+    path: "{{ backup_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: "Create sync dir"
+  ansible.builtin.file:
+    path: "{{ backup_sync_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: "Create snapshot dir"
+  ansible.builtin.file:
+    path: "{{ backup_snapshots_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: "Create snapshot history dir"
+  ansible.builtin.file:
+    path: "{{ backup_snapshots_history_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: "Create logs dir"
+  ansible.builtin.file:
+    path: "{{ backup_logs_dir }}"
+    state: directory
+    owner: root
+    group: root
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: Copy backup script
+  ansible.builtin.template:
+    src: create_daily_snapshot.sh
+    dest: "{{ backup_dir }}/create_daily_snapshot.sh"
+    owner: root
+    group: root
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: Copy sync list
+  ansible.builtin.template:
+    src: sync_list.txt
+    dest: "{{ backup_dir }}/sync_list.txt"
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+  become: yes
+
+- name: Copy snapshot list
+  ansible.builtin.template:
+    src: snapshot_list.txt
+    dest: "{{ backup_dir }}/snapshot_list.txt"
+    owner: root
+    group: root
+    mode: u=rw,g=rw,o=r
+  become: yes
+
+- name: Create backup cron
+  ansible.builtin.cron:
+    name: "backup"
+    minute: 00
+    hour: 05
+    job: "{{ backup_dir }}/create_daily_snapshot.sh >/dev/null 2>&1"
+  become: yes

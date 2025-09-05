@@ -1,0 +1,19 @@
+---
+# Some containers modified owner or rights of their volume dirs.
+# ansible.builtin.file would just reset this to the initial values
+# in case the task is rerun. To avoid this, an additional check is
+# needed.
+- name: Check if data directory exists
+  ansible.builtin.stat:
+    path: "{{ container_volumes_dir }}/{{ compose_volume_dir }}"
+  register: datadirstate
+  become: yes
+
+- name: "Create {{ compose_volume_dir }} dir, if not existing"
+  ansible.builtin.file:
+    path: "{{ container_volumes_dir }}/{{ compose_volume_dir }}"
+    state: directory
+    owner: "{{ podman_user }}"
+    group: "{{ podman_user }}"
+  when: not datadirstate.stat.exists
+  become: yes

@@ -1,0 +1,13 @@
+# IntelliJ
+.idea
+*.ipr
+*.iml
+*.iws
+http-client.private.env.json
+
+# Passwords
+vault.yml
+.vault_password_file
+
+# Others
+.DS_Store

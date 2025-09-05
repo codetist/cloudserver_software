@@ -1,0 +1,61 @@
+---
+- name: fail2banexporter, if already installed
+  stat:
+    path: /usr/local/sbin/fail2ban_exporter
+  become: yes
+  register: f2b_state
+
+- name: fail2banexporter, Get latest release of a public repository
+  shell: curl -sL "https://gitlab.com/api/v4/projects/24199687/releases/permalink/latest" | jq -r '.assets.links[] | select(.name | test("linux_amd64")) | .url'
+  register: download_url
+  when: not f2b_state.stat.exists
+
+- name: fail2banexporter, download binary
+  get_url:
+    url: "{{ download_url.stdout}}"
+    dest: /tmp/f2e.tar.gz
+    mode: u=rw,g=rw
+  when: not f2b_state.stat.exists
+
+- name: fail2banexporter, extract
+  shell: tar -xzf f2e.tar.gz
+  args:
+    chdir: /tmp
+  when: not f2b_state.stat.exists
+
+- name: fail2banexporter, copy to /usr/local/sbin
+  copy:
+    src: /tmp/fail2ban_exporter
+    dest: /usr/local/sbin/fail2ban_exporter
+    remote_src: yes
+    mode: u=rwx,g=rx,o=rx
+  become: yes
+  when: not f2b_state.stat.exists
+
+- name: fail2banexporter, delete tmp file
+  file:
+    state: absent
+    path: /tmp/fail2ban_exporter
+  when: not f2b_state.stat.exists
+
+- name: fail2banexporter, delete tmp archive
+  file:
+    state: absent
+    path: /tmp/f2e.tar.gz
+  when: not f2b_state.stat.exists
+
+- name: fail2banexporter, create service config
+  template:
+    src: conf/prometheus-fail2ban-exporter-service.conf
+    dest: /etc/systemd/system/prometheus-fail2ban-exporter.service
+    owner: root
+    group: root
+    mode: u=rwx,g=rx,o=rx
+  become: yes
+
+- name: Restart fail2banexporter
+  service:
+    name: prometheus-fail2ban-exporter
+    state: restarted
+    enabled: yes
+  become: yes

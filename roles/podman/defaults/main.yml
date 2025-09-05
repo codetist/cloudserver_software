@@ -1,0 +1,70 @@
+# Root directory for containers
+volumes_root_dir: "volumes"
+
+# Define composes
+podman_composes:
+  - compose_name: authelia
+    compose_template: authelia_compose.yml
+    compose_volumes:
+      - "config"
+    compose_config_templates:
+      - source: conf/authelia/configuration.yml
+        target: config/configuration.yml
+        do_update: true
+      - source: conf/authelia/users_database.yml
+        target: config/users_database.yml
+        do_update: false
+
+  - compose_name: kanboard
+    compose_template: kanboard_compose.yml
+    compose_volumes:
+      - "data"
+      - "plugins"
+    compose_config_templates:
+      - source: conf/kanboard/config.php
+        target: data/config.php
+        do_update: true
+
+  - compose_name: memos
+    compose_template: memos_compose.yml
+    compose_volumes:
+      - "data"
+    compose_config_templates: []
+
+  - compose_name: miniflux
+    compose_template: miniflux_compose.yml
+    compose_volumes:
+      - "db"
+    compose_config_templates: []
+
+  - compose_name: podmanexporter
+    compose_template: podmanexporter_compose.yml
+    compose_volumes: []
+    compose_config_templates: []
+
+  - compose_name: readeck
+    compose_template: readeck_compose.yml
+    compose_volumes:
+      - "data"
+    compose_config_templates: []
+
+# Readeck config
+readeck_secret_key: "{{ readeck_secret_key_vault }}"
+
+# Authelia config
+authelia_jwt_secret: "{{ authelia_jwt_secret_vault }}"
+authelia_session_secret: "{{ authelia_session_secret_vault }}"
+authelia_storage_encryption_key: "{{ authelia_storage_encryption_key_vault }}"
+authelia_user: "{{ authelia_user_vault }}"
+authelia_user_display_name: "{{ authelia_user_display_name_vault }}"
+authelia_user_email: "{{ authelia_user_email_vault }}"
+authelia_user_password: "{{ authelia_user_password_vault }}"
+
+authelia_jwt_public_key: "{{ authelia_jwt_public_key_vault }}"
+authelia_jwt_private_key: "{{ authelia_jwt_private_key_vault }}"
+
+authelia_memos_client_secret: "{{ authelia_memos_client_secret_vault }}"
+authelia_memos_client_secret_hashed: "{{ authelia_memos_client_secret_hashed_vault }}"
+
+authelia_miniflux_client_secret: "{{ authelia_miniflux_client_secret_vault }}"
+authelia_minuflux_client_secret_hashed: "{{ authelia_miniflux_client_secret_hashed_vault }}"

@@ -1,0 +1,100 @@
+---
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - prometheus-pushgateway
+      - prometheus-nginx-exporter
+      - prometheus-node-exporter
+      - jq
+    state: present
+  become: yes
+
+- name: Prometheus Pushgateway service Env
+  template:
+    src: templates/conf/prometheus-pushgateway-service-env
+    dest: /etc/default/prometheus-pushgateway
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  become: yes
+  notify:
+    - Restart prometheus-pushgateway
+
+- name: Prometheus Node-exporter service Env
+  template:
+    src: templates/conf/prometheus-node-exporter-service-env
+    dest: /etc/default/prometheus-node-exporter
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  become: yes
+  notify:
+    - Restart prometheus-node-exporter
+
+- name: Prometheus Nginx-exporter service Env
+  template:
+    src: templates/conf/prometheus-nginx-exporter-service-env
+    dest: /etc/default/prometheus-nginx-exporter
+    owner: root
+    group: root
+    mode: u=rw,g=r,o=r
+  become: yes
+  notify:
+    - Restart prometheus-nginx-exporter
+
+- name: Create monitoring dir
+  file:
+    path: "{{ monitoring_dir }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: Create monitoring lib dir
+  file:
+    path: "{{ monitoring_lib_dir }}"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: Copy metricLib
+  template:
+    src: "{{ item }}"
+    dest: "{{ monitoring_lib_dir }}/{{ item | basename }}"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: u=rwx,g=rwx,o=rx
+  with_fileglob:
+    templates/scripts/metrics/*
+  become: yes
+
+- name: Create metricsLib conf dir
+  file:
+    path: "{{ monitoring_lib_dir }}/conf"
+    state: directory
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: Copy metricsLib  conf
+  template:
+    src: "{{ item }}"
+    dest: "{{ monitoring_lib_dir }}/conf/{{ item | basename }}"
+    owner: "{{ deploy_user }}"
+    group: "{{ deploy_user }}"
+    mode: u=rwx,g=rwx,o=rx
+  with_fileglob:
+    templates/conf/metrics/*
+  become: yes
+
+- name: initMetrics
+  command: "{{ monitoring_lib_dir }}/refreshMetrics.sh"
+  become: yes
+
+- name: Setup prometheus-fail2ban-exporter
+  include_tasks:
+    file: task_fail2ban_exporter.yml

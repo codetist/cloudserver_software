@@ -1,0 +1,38 @@
+---
+- name: "Setup server1"
+  hosts: server1
+  gather_facts: true
+  user: "{{ deploy_user }}"
+  roles:
+    #
+    # Sets various network related facts
+    # for use in further roles, needs to always be run!
+    #
+    - role: networkfacts
+      tags: always
+    #
+    # Do the real work...
+    #
+    - role: dnsrecords
+      tags: dns
+
+    - role: letsencryptnginx
+      tags: le
+
+    - role: postfix
+      tags: postfix
+
+    - role: nginx
+      tags: nginx
+
+    - role: monitoring
+      tags: monitoring
+
+    - role: fail2ban
+      tags: fail2ban
+
+    - role: podman
+      tags: podman
+
+    - role: simplebackup
+      tags: backup

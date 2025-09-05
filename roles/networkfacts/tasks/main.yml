@@ -1,0 +1,20 @@
+---
+- name: Set external IP addresses
+  ansible.builtin.set_fact:
+    host_external_ipv4: "{{ ansible_facts[external_interface_name]['ipv4']['address'] }}"
+    host_external_ipv6: "{{ ansible_facts[external_interface_name]['ipv6'] 
+                      | list 
+                      | selectattr('scope', 'equalto', 'global') 
+                      | list 
+                      | map(attribute='address') 
+                      | first }}"
+
+- name: Get hostname
+  command: hostname
+  register: hostname_result
+  changed_when: false
+  become: yes
+
+- name: Set hostname
+  set_fact:
+    host_name: "{{ hostname_result.stdout }}"

@@ -1,0 +1,15 @@
+---
+- name: Setup podman
+  include_tasks:
+    file: task_setup_podman.yml
+
+- name: Setup compose
+  include_tasks:
+    file: task_setup_compose.yml
+  vars:
+    compose_name: "{{ item.compose_name }}"
+    compose_template: "{{ item.compose_template }}"
+    compose_volumes: "{{ item.compose_volumes }}"
+    compose_config_templates: "{{ item.compose_config_templates }}"
+  when: ((compose_name | default('')) | length > 0) and ((compose_template | default('')) | length > 0)
+  loop: "{{ podman_composes }}"

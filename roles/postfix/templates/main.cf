@@ -1,0 +1,60 @@
+# See /usr/share/postfix/main.cf.dist for a commented, more complete version
+
+myhostname={{ host_name }}
+smtp_generic_maps = hash:/etc/postfix/generic
+
+# rewrite recipient mails
+recipient_canonical_maps = hash:/etc/postfix/recipient_canonical
+
+# Enable smtpd and allow local network
+smtpd_relay_restrictions = permit_mynetworks, reject_unauth_destination
+smtpd_recipient_restrictions = permit_mynetworks, reject_unauth_destination
+
+smtpd_banner = $myhostname ESMTP $mail_name (Debian/GNU)
+biff = no
+
+# appending .domain is the MUA's job.
+append_dot_mydomain = no
+
+# Uncomment the next line to generate "delayed mail" warnings
+#delay_warning_time = 4h
+
+alias_maps = hash:/etc/aliases
+alias_database = hash:/etc/aliases
+
+{#
+  Check if host_name belongs to the relay mail domain.
+  If this is the case $myhostname and $mydomain should not be listed
+  in mydestination.
+
+  Everything that is mentioned in mydestination, will be delivered locally
+  by postfix. Everything else will be relayed to the relayhost.
+  If the hostname matches the domain of the mail to be sent, postfix
+  will try to delivery those mail locally (and most probably fail).
+#}
+{% if host_name | regex_search(postfix_mail_domain + '$') %}
+mydestination = localhost.$mydomain, localhost
+{% else %}
+mydestination = $myhostname, localhost.$mydomain, localhost, $mydomain
+{% endif %}
+
+# Allow IPs/network to use Postfix SMTP
+# - 127.0.0.0/8 for local services
+# - 10.0.0.0/8 to allow access from root-podman/vm networks
+# - hostip for non-root podman containers, they are NATed to
+#          the host ip
+mynetworks = 127.0.0.0/8, 10.0.0.0/8, {{ host_external_ipv4 }}, {{ host_external_ipv6 }}
+inet_interfaces = all
+inet_protocols=ipv4, ipv6
+recipient_delimiter = +
+
+
+relayhost = [{{ postfix_mailserver }}]:{{ postfix_mailserver_port }}
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+smtp_use_tls = yes
+#smtp_tls_wrappermode = yes
+#smtp_tls_security_level = encrypt
+

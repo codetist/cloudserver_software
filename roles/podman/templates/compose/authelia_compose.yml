@@ -1,0 +1,19 @@
+version: '3'
+
+services:
+  authelia:
+    image: authelia/authelia
+    restart: always
+    ports:
+      - "127.0.0.1:9099:9091"
+      - "{{ ansible_host }}:9098:9092"
+    environment:
+      - TZ=Europe/Berlin
+    volumes:
+      - authelia-volume:/config
+volumes:
+  authelia-volume:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[0] }}
+      o: bind

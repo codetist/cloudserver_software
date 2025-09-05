@@ -1,0 +1,36 @@
+---
+# Hetzner DNS API token
+hetzner_dns_token: "{{ hetzner_dns_token_vault }}"
+
+# Zone a.k.a domain to add subdomains to
+hetzner_dns_zone: "{{ hetzner_dns_zone_vault }}"
+
+# Public interface, used to get IPv4/IPv6 for DNS records
+external_interface_name: eth0
+
+# Subdomains for direct reference
+memos_subdomain: memos
+feeds_subdomain: feeds
+marks_subdomain: marks
+tasks_subdomain: tasks
+auth_subdomain: auth
+
+# Subdomains that get an DNS record and LetsEncrypt certificate
+subdomains: [
+  "{{ memos_subdomain }}",
+  "{{ marks_subdomain }}",
+  "{{ feeds_subdomain }}",
+  "{{ tasks_subdomain }}",
+  "{{ auth_subdomain }}"
+]
+
+# Directories
+monitoring_dir: /opt/monitoring
+monitoring_lib_dir: "{{ monitoring_dir }}/lib"
+
+geoip_dir: /opt/geoip
+
+# Webuser
+
+webuser_name: "{{ webuser_name_vault }}"
+webuser_password: "{{ webuser_password_vault }}"

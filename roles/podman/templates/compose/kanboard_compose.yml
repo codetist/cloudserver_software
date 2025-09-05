@@ -1,0 +1,51 @@
+
+services:
+  kanboard:
+    image: kanboard/kanboard:latest
+    restart: always
+    ports:
+      - "127.0.0.1:9096:80"
+    environment:
+      - DEBUG=false
+      # Allow plugin installs from webfrontend
+      - PLUGIN_INSTALLER=true
+      # Reverse proxy auth
+      - REVERSE_PROXY_AUTH=true
+      # All headers must be prefixed by HTTP_, all hyphens replaced by underscores,
+      # and the string in all capitals, because it's how PHP makes them accessible.
+      - REVERSE_PROXY_USER_HEADER=HTTP_REMOTE_USER
+      - REVERSE_PROXY_EMAIL_HEADER=HTTP_REMOTE_EMAIL
+      - REVERSE_PROXY_FULLNAME_HEADER=HTTP_REMOTE_NAME
+      - TRUSTED_PROXY_HEADERS=HTTP_REMOTE_USER,HTTP_REMOTE_EMAIL,HTTP_REMOTE_NAME
+      # Admin user
+      - REVERSE_PROXY_DEFAULT_ADMIN={{ authelia_user }}
+      # Mail config
+      - MAIL_CONFIGURATION=true
+      - MAIL_TRANSPORT=smtp
+      - MAIL_SMTP_HOSTNAME=host.containers.internal
+      - MAIL_SMTP_PORT=25
+      - MAIL_SMTP_ENCRYPTION=null
+      - MAIL_FROM={{ postfix_mail_address }}
+      # Database config
+      - DB_RUN_MIGRATIONS=true
+      - DB_DRIVER=sqlite
+      - DB_WAL_MODE=true
+      # Login/logout disabled, as we use reverse proxy auth
+      - HIDE_LOGIN_FORM=true
+      - DISABLE_LOGOUT=true
+      # Timezone
+      - TZ=Europe/Berlin
+    volumes:
+      - kanboard-data:/var/www/app/data
+      - kanboard-plugins:/var/www/app/plugins
+volumes:
+  kanboard-data:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[0] }}
+      o: bind
+  kanboard-plugins:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[1] }}
+      o: bind

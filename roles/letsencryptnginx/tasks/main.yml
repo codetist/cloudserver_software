@@ -1,0 +1,48 @@
+---
+- name: Install packages
+  ansible.builtin.apt:
+    name:
+      - nginx
+      - letsencrypt
+      - python3-certbot-nginx
+    state: present
+  become: yes
+
+- name: Register certbot
+  ansible.builtin.command:
+    cmd: "{{ item }}"
+    creates: /etc/letsencrypt/.registered
+  with_items:
+    - "certbot -n register --agree-tos --email {{ letsencrypt_email }}"
+    - "touch /etc/letsencrypt/.registered"
+  become: yes
+
+- name: Create certificates
+  ansible.builtin.command:
+    cmd: "certbot -n --nginx certonly -d {{ item }}.{{ hetzner_dns_zone }}"
+    creates: "/etc/letsencrypt/live/{{ item }}.{{ hetzner_dns_zone }}"
+  with_items: "{{ subdomains | list }}"
+  become: yes
+
+- name: Create renewal directory
+  ansible.builtin.file:
+    path: "{{ letsencrypt_root }}"
+    state: directory
+    mode: u=rwx,g=rwx,o=rx
+  become: yes
+
+- name: Create renewal script
+  ansible.builtin.template:
+    src: renew_letsencrypt.sh
+    dest: "{{ letsencrypt_root }}/renew_letsencrypt.sh"
+    mode: u=rwx,g=rw,o=r
+  become: yes
+
+- name: Renewal cron
+  ansible.builtin.cron:
+    name: "letsencryptrenewal"
+    minute: 00
+    hour: 04
+    job: "{{ letsencrypt_root }}/renew_letsencrypt.sh >/dev/null 2>&1"
+  become: yes
+
