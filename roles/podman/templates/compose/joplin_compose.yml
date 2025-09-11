@@ -1,0 +1,32 @@
+services:
+  joplin:
+      image: joplin/server:latest
+      restart: always
+      ports:
+        - "127.0.0.1:22300:22300"
+      environment:
+        - APP_PORT=22300
+        - APP_BASE_URL=https://{{ notes_subdomain }}.{{ hetzner_dns_zone }}
+        - DB_CLIENT=sqlite3
+        - SQLITE_DATABASE=/jpdata/db/sqlite.db
+        - STORAGE_DRIVER=Type=Filesystem; Path=/jpdata/storage
+        - MAILER_ENABLED=1
+        - MAILER_HOST=host.containers.internal
+        - MAILER_PORT=25
+        - MAILER_SECURITY=none
+        - MAILER_NOREPLY_EMAIL={{ postfix_mail_address }}
+        - TZ=Europe/Berlin
+      volumes:
+        - joplin-db:/jpdata/db
+        - joplin-data:/jpdata/storage
+volumes:
+  joplin-db:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[0] }}
+      o: bind
+  joplin-data:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[1] }}
+      o: bind

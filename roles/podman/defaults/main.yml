@@ -15,6 +15,13 @@ podman_composes:
         target: config/users_database.yml
         do_update: false
 
+  - compose_name: joplin
+    compose_template: joplin_compose.yml
+    compose_volumes:
+      - "db"
+      - "data"
+    compose_config_templates: []
+
   - compose_name: kanboard
     compose_template: kanboard_compose.yml
     compose_volumes:
