@@ -40,7 +40,15 @@ server {
     return 444;
   }
 
-  location / {
+  # include internal authelia auth request endpoint
+  include /etc/nginx/snippets/authelia_internal.conf;
+
+  # enable endpoints that are required for API access
+  # order is important, regex location needs to be before
+  # any static string location
+  #
+  # allow app to load attachments, bypassing Authelia
+  location ~ ^/(file)(/|$) {
     proxy_http_version 1.1;
     proxy_set_header Connection "";
     proxy_set_header Host $host;
@@ -53,6 +61,7 @@ server {
 
   # Add mortis as a proxy to the older API version of
   # memos 0.21, workaround for Moe Memos app
+  # and bypass Authelia for API
 
   location /api/v1/ {
     proxy_http_version 1.1;
@@ -62,7 +71,7 @@ server {
     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
     proxy_set_header X-Forwarded-Proto $scheme;
 
-    proxy_pass http://backend_mortis;
+    proxy_pass http://backend_memos;
   }
 
   location /o/r/ {
@@ -74,5 +83,21 @@ server {
     proxy_set_header X-Forwarded-Proto $scheme;
 
     proxy_pass http://backend_mortis;
+  }
+
+  # memos
+  location / {
+    # redirect to authelia, in case user is not logged in with authelia
+    include /etc/nginx/snippets/authelia_auth.conf;
+
+    # once logged in with authelia, requests get processed here....
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+    proxy_set_header Host $http_host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+
+    proxy_pass http://backend_memos;
   }
 }
