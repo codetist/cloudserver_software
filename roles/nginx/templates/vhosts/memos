@@ -48,7 +48,7 @@ server {
   # any static string location
   #
   # allow app to load attachments, bypassing Authelia
-  location ~ ^/(file)(/|$) {
+  location ~ ^/(file|auth|assets|explore.*|memos\.api\.v1.*)(/|$) {
     proxy_http_version 1.1;
     proxy_set_header Connection "";
     proxy_set_header Host $host;
