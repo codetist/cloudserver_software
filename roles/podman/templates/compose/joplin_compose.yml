@@ -10,6 +10,12 @@ services:
         - DB_CLIENT=sqlite3
         - SQLITE_DATABASE=/jpdata/db/sqlite.db
         - STORAGE_DRIVER=Type=Filesystem; Path=/jpdata/storage
+        # Events are huge, currently ~20MB per week for a single user
+        # with 350 notes
+        # But deleting events might mean, that clients that get beyond
+        # existing events will not sync old changes
+        - EVENTS_AUTO_DELETE_ENABLED=true
+        - EVENTS_AUTO_DELETE_AFTER_DAYS=365
         - MAILER_ENABLED=1
         - MAILER_HOST=host.containers.internal
         - MAILER_PORT=25
