@@ -13,3 +13,12 @@
     compose_config_templates: "{{ item.compose_config_templates }}"
   when: ((compose_name | default('')) | length > 0) and ((compose_template | default('')) | length > 0)
   loop: "{{ podman_composes }}"
+
+- name: "Prune unused images"
+  command: "podman image prune --force"
+  args:
+    chdir: "{{ container_root_dir }}"
+  become: yes
+  become_user: "{{ podman_user }}"
+  environment:
+    XDG_RUNTIME_DIR: "/run/user/{{ podman_user_uid.stdout }}"
