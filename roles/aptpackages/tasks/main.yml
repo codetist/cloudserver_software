@@ -1,0 +1,16 @@
+---
+- name: Install packages that do not require further actions/configuration
+  ansible.builtin.apt:
+    name:
+      - curl
+      - dialog
+      - iputils-ping
+      - jq
+      - nano
+      - net-tools
+      - rsync
+      - sqlite3
+      - wget
+      - zip
+    state: present
+  become: yes

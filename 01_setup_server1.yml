@@ -13,6 +13,9 @@
     #
     # Do the real work...
     #
+    - role: aptpackages
+      tags: packages
+
     - role: dnsrecords
       tags: dns
 

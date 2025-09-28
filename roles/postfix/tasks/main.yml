@@ -1,6 +1,6 @@
 ---
 - name: postfix, Install
-  apt:
+  ansible.builtin.apt:
     name:
       - postfix
       - libsasl2-modules
