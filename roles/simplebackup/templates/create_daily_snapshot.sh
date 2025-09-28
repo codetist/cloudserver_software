@@ -206,7 +206,7 @@ chmod u=rw,go=r $SNAPSHOTDIR/*.tar.gz >> $LOGFILE
 # delete old logs and snapshots
 find $LOGDIR -name "*.log" -type f -mtime +30 -delete >> $LOGFILE
 ((rc=rc+$?))
-find $SNAPSHOTDIR -name "*.tar.gz" -type f -mtime +60 -delete >> $LOGFILE
+find $SNAPSHOTDIR -name "*.tar.gz" -type f -mtime +30 -delete >> $LOGFILE
 ((rc=rc+$?))
 
 if [ $rc -ne 0 ]
