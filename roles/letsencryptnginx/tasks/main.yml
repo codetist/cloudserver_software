@@ -17,6 +17,9 @@
     - "touch /etc/letsencrypt/.registered"
   become: yes
 
+#
+# Use sudo certbot delete, to delete domains interactively if required
+#
 - name: Create certificates
   ansible.builtin.command:
     cmd: "certbot -n --nginx certonly -d {{ item }}.{{ hetzner_dns_zone }}"

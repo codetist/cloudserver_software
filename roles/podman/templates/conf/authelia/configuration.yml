@@ -67,29 +67,6 @@ identity_providers:
           {{ line }}
 {% endfor %}
     clients:
-      - client_id: 'memos'
-        client_name: 'memos'
-        client_secret: '{{ authelia_memos_client_secret_hashed }}'
-        public: false
-        authorization_policy: 'two_factor'
-        require_pkce: false
-        pkce_challenge_method: ''
-        redirect_uris:
-          - 'https://{{ memos_subdomain }}.{{ hetzner_dns_zone }}/auth/callback'
-        scopes:
-          - 'openid'
-          - 'profile'
-          - 'email'
-        response_types:
-          - 'code'
-        grant_types:
-          - 'authorization_code'
-        access_token_signed_response_alg: 'none'
-        userinfo_signed_response_alg: 'none'
-        token_endpoint_auth_method: 'client_secret_post'
-        # implicit = don't ask for consent when accessing applications
-        consent_mode: implicit
-        pre_configured_consent_duration: '3M'
       - client_id: 'miniflux'
         client_name: 'miniflux'
         client_secret: '{{ authelia_minuflux_client_secret_hashed }}'

@@ -32,12 +32,6 @@ podman_composes:
         target: data/config.php
         do_update: true
 
-  - compose_name: memos
-    compose_template: memos_compose.yml
-    compose_volumes:
-      - "data"
-    compose_config_templates: []
-
   - compose_name: miniflux
     compose_template: miniflux_compose.yml
     compose_volumes:
@@ -69,9 +63,6 @@ authelia_user_password: "{{ authelia_user_password_vault }}"
 
 authelia_jwt_public_key: "{{ authelia_jwt_public_key_vault }}"
 authelia_jwt_private_key: "{{ authelia_jwt_private_key_vault }}"
-
-authelia_memos_client_secret: "{{ authelia_memos_client_secret_vault }}"
-authelia_memos_client_secret_hashed: "{{ authelia_memos_client_secret_hashed_vault }}"
 
 authelia_miniflux_client_secret: "{{ authelia_miniflux_client_secret_vault }}"
 authelia_minuflux_client_secret_hashed: "{{ authelia_miniflux_client_secret_hashed_vault }}"

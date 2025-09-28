@@ -9,7 +9,6 @@ hetzner_dns_zone: "{{ hetzner_dns_zone_vault }}"
 external_interface_name: eth0
 
 # Subdomains for direct reference
-memos_subdomain: memos
 notes_subdomain: notes
 feeds_subdomain: feeds
 marks_subdomain: marks
@@ -18,7 +17,6 @@ auth_subdomain: auth
 
 # Subdomains that get an DNS record and LetsEncrypt certificate
 subdomains: [
-  "{{ memos_subdomain }}",
   "{{ marks_subdomain }}",
   "{{ notes_subdomain }}",
   "{{ feeds_subdomain }}",
