@@ -27,6 +27,7 @@ podman_composes:
     compose_volumes:
       - "data"
       - "plugins"
+      - "certs"
     compose_config_templates:
       - source: conf/kanboard/config.php
         target: data/config.php

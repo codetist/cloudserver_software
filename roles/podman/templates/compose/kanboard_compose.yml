@@ -38,6 +38,7 @@ services:
     volumes:
       - kanboard-data:/var/www/app/data
       - kanboard-plugins:/var/www/app/plugins
+      - kanboard-certs:/etc/nginx/ssl
 volumes:
   kanboard-data:
     driver_opts:
@@ -48,4 +49,9 @@ volumes:
     driver_opts:
       type: none
       device: {{ container_volumes_dir }}/{{ compose_volumes[1] }}
+      o: bind
+  kanboard-certs:
+    driver_opts:
+      type: none
+      device: {{ container_volumes_dir }}/{{ compose_volumes[2] }}
       o: bind
